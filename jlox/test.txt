@@ -1,0 +1,9 @@
+print("Hello" + "World");
+// Well done
+3.14 + 5 * 9
+/* this is multi-line comment
+hello World
+/*
+*/
+
+var variable

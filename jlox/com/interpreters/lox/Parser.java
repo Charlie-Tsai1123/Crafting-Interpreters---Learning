@@ -1,9 +1,12 @@
 package com.interpreters.lox;
 
+import java.util.ArrayList;
 import java.util.List;
 import static com.interpreters.lox.TokenType.*;
 
 /*
+Expression
+
 expression     → comma ;
 comma          → equality ( "," equality )* ;
 equality       → comparison ( ( "!=" | "==" ) comparison )* ;
@@ -16,6 +19,18 @@ primary        → NUMBER | STRING | "true" | "false" | "nil"
                | "(" expression ")" ;
 */
 
+/*
+Statement
+
+program        → statement* EOF ;
+
+statement      → exprStmt
+               | printStmt ;
+
+exprStmt       → expression ";" ;
+printStmt      → "print" expression ";" ;
+*/
+
 class Parser {
     private final List<Token> tokens;
     private int current = 0;
@@ -25,12 +40,18 @@ class Parser {
         this.tokens = tokens;
     }
 
-    Expr parse() {
-        try {
-            return expression();
-        } catch (ParseError error) {
-            return null;
+    List<Stmt> parse() {
+        // try {
+        //     return expression();
+        // } catch (ParseError error) {
+        //     return null;
+        // }
+        List<Stmt> statements = new ArrayList<>();
+        while (!isAtEnd()) {
+            statements.add(statement());
         }
+
+        return statements;
     }
 
     private Token peek() {
@@ -214,4 +235,22 @@ class Parser {
         }
     }
     
+    private Stmt statement() {
+        // statement      → exprStmt
+        //                | printStmt ;
+        if (match(PRINT)) return printStatement();
+        return expressionStatement();
+    }
+
+    private Stmt printStatement() {
+        Expr value = expression();
+        consume(SEMICOLON, "Expect ';' after value.");
+        return new Stmt.Print(value);
+    }
+
+    private Stmt expressionStatement() {
+        Expr expression = expression();
+        consume(SEMICOLON, "Expect ';' after expression.");
+        return new Stmt.Expression(expression);
+    }
 }

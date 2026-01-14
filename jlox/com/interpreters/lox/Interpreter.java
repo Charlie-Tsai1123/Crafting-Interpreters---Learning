@@ -1,13 +1,31 @@
 package com.interpreters.lox;
 
-class Interpreter implements Expr.Visitor<Object> {
-    void interpret(Expr expr) {
+import com.interpreters.lox.Stmt.Print;
+import java.util.List;
+
+class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+    void interpret(List<Stmt> statements) {
+        // try {
+        //     Object value = evaluate(expr);
+        //     System.out.println(stringify(value));
+        // } catch (RuntimeError error) {
+        //     Lox.runtimeError(error);
+        // }
         try {
-            Object value = evaluate(expr);
-            System.out.println(stringify(value));
+            for (Stmt stmt: statements) {
+                execute(stmt);;
+            }
         } catch (RuntimeError error) {
             Lox.runtimeError(error);
         }
+    }
+
+    private void execute(Stmt stmt) {
+        stmt.accept(this);
+    }
+
+    private Object evaluate(Expr expr) {
+        return expr.accept(this);
     }
 
     @Override
@@ -18,10 +36,6 @@ class Interpreter implements Expr.Visitor<Object> {
     @Override
     public Object visitGroupingExpr(Expr.Grouping expr) {
         return evaluate(expr.expression);
-    }
-
-    private Object evaluate(Expr expr) {
-        return expr.accept(this);
     }
 
     @Override
@@ -119,5 +133,18 @@ class Interpreter implements Expr.Visitor<Object> {
             return text;
         }
         return object.toString();
+    }
+
+    @Override
+    public Void visitExpressionStmt(Stmt.Expression stmt) {
+        evaluate(stmt.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitPrintStmt(Print stmt) {
+        Object value = evaluate(stmt.expression);
+        System.out.println(stringify(value));
+        return null;
     }
 }

@@ -16,13 +16,18 @@ factor         → unary ( ( "/" | "*" ) unary )* ;
 unary          → ( "!" | "-" ) unary
                | primary ;
 primary        → NUMBER | STRING | "true" | "false" | "nil"
-               | "(" expression ")" ;
+               | "(" expression ")" | IDENTIFIER ;
 */
 
 /*
 Statement
 
-program        → statement* EOF ;
+program        → declaration* EOF ;
+
+declaration    → varDecl
+               | statement ;
+
+varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
 
 statement      → exprStmt
                | printStmt ;
@@ -48,7 +53,7 @@ class Parser {
         // }
         List<Stmt> statements = new ArrayList<>();
         while (!isAtEnd()) {
-            statements.add(statement());
+            statements.add(declaration());
         }
 
         return statements;
@@ -201,6 +206,11 @@ class Parser {
             return new Expr.Grouping(expr);
         }
 
+        if (match(IDENTIFIER)) {
+            Token name = previous();
+            return new Expr.Variable(name);
+        }
+
         throw error(peek(), "Expect expression.");
     }
 
@@ -233,6 +243,30 @@ class Parser {
             }
             advance();
         }
+    }
+
+    private Stmt declaration() {
+        // declaration    → varDecl
+        //                | statement ;
+        try {
+            if (match(VAR)) return varDeclaration();
+            return statement();
+        } catch (ParseError error) {
+            synchronize();
+            return null;
+        }
+        
+    }
+
+    private Stmt varDeclaration() {
+        // varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
+        Token name = consume(IDENTIFIER, "Expect variable name after 'var'.");
+        Expr initializer = null;
+        if (match(EQUAL)) {
+            initializer = expression();
+        }
+        consume(SEMICOLON, "Expect ';' after variable declaration.");
+        return new Stmt.Var(name, initializer);
     }
     
     private Stmt statement() {

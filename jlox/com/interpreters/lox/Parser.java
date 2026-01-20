@@ -8,7 +8,9 @@ import static com.interpreters.lox.TokenType.*;
 Expression
 
 expression     → comma ;
-comma          → equality ( "," equality )* ;
+comma          → assignment ( "," assignment )* ;
+assignment     → IDENTIFIER "=" assignment
+               | equality ;
 equality       → comparison ( ( "!=" | "==" ) comparison )* ;
 comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term           → factor ( ( "-" | "+" ) factor )* ;
@@ -97,12 +99,27 @@ class Parser {
     }
 
     private Expr comma() {
-        // comma       → equality ( "," equality )* ;
-        Expr expr = equality();
+        // comma          → assignment ( "," assignment )* ;
+        Expr expr = assign();
         while (match(COMMA)) {
             Token operator = previous();
-            Expr right = equality();
+            Expr right = assign();
             expr = new Expr.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+    private Expr assign() {
+        // assignment     → IDENTIFIER "=" assignment
+        //                | equality ;
+        Expr expr = equality();
+        if (match(EQUAL)) {
+            Token equal = previous();
+            Expr value = assign();
+            if (expr instanceof Expr.Variable) {
+                return new Expr.Assign(((Expr.Variable)expr).name, value);
+            }
+            error(equal, "Invalid assignment target.");
         }
         return expr;
     }
